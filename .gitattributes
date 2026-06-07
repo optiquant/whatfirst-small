@@ -1,1 +1,6 @@
+# Linux container target — keep LF endings so shell scripts run in Docker.
+* text=auto eol=lf
+*.gguf binary
+*.png binary
+*.jpg binary
 *.ttf filter=lfs diff=lfs merge=lfs -text
