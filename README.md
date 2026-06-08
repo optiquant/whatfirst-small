@@ -32,13 +32,14 @@ vague human language into structured fields) and makes the prioritization itself
 that explodes as a deadline nears, a quick-win boost for short ready tasks, and
 deadlines treated as a hard constraint rather than a number folded into a blob.
 
-The problem, and the scoring model, come from
-**[what-first.com](https://what-first.com)** — a full web app the same team built
-in June 2026, where the scoring runs server-side against Claude. This entry is a
-fresh, **offline, small-model** take built for the hackathon: can a 3B model on a
-laptop do the load-bearing language work that a frontier cloud model does in the
-product? The ranking engine here is a clean-room reimplementation in Python with
-its own tests — no dependency on the original.
+The problem — and the prioritization approach — come from
+**[what-first.com](https://what-first.com)**, a full web app the same team built
+in June 2026. There, a frontier cloud model (Claude) does the language work —
+reading your tasks and proposing their impact, readiness, and effort — and a
+deterministic engine ranks them. This entry asks a smaller question: can a **3B
+model running offline on a laptop** do that same language work? The ranking
+engine here is a clean-room Python reimplementation with its own tests, not a
+copy of the original.
 
 ## How it works
 

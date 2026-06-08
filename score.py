@@ -1,34 +1,14 @@
 """Priority scoring + deadline ranking — the deterministic core.
 
-Clean-room Python port of whatfirst's scoring engine, re-implemented from the
-formula's documented behaviour. It depends on nothing but the standard library
-(math, datetime) and imports nothing from the original app. Two parallel scores
-compete; the higher one is what the user sees.
+Two scores compete; the higher one is displayed:
 
     do_score   = (I * U * R_eff * QW) / 10
     prep_score = (I * U * (10 - R)) / 10 * 0.7 * QW
 
-where:
-    U       = max(calendar_urgency, completion_urgency)
-    QW      = 1 + 0.6 * (I/10) * exp(-E/1.5)        quick-win boost
-    R_floor = clamp((U - 6) / 4 * 10, 0, 10)        urgency's target readiness
-    R_eff   = R + max(0, R_floor - R) * READY_LIFT  urgency lifts an unready task
-    defer   = U_comp >= 9 and slack < 0.5 and I < 7 flag, not a number
-
-READY_LIFT (< 1) keeps the readiness control live: R_eff stays strictly
-increasing in R, so readiness always moves the do-score while urgency can still
-drag an unready-but-urgent task up to where it competes. All inputs are coerced
-to finite numbers and clamped to their domains (I,R in [1,10], E >= 0.05) so the
-displayed score can never be NaN/Infinity.
-
-Urgency is unbounded near zero: a rational decay holds for d > 2 days, then an
-inverse-distance term takes over and grows past 10 as the deadline approaches
-(saturating at 30 the instant before due). Crossing the deadline hands off
-continuously: the overdue branch picks up at 30 and ramps to 40 over five days,
-so a task never loses urgency merely by going late.
-
-If task["execute_anyway"] is true, R_eff is forced to max(R, 9), prep_score is
-zeroed, and the defer flag is suppressed (the user opted in to risk-on mode).
+with U = max(calendar_urgency, completion_urgency), a quick-win boost QW, and a
+partial readiness lift R_eff. All inputs are coerced to finite numbers and
+clamped to their domains, so the score can never be NaN/Infinity. Standard
+library only.
 """
 
 from __future__ import annotations
@@ -36,26 +16,13 @@ from __future__ import annotations
 import math
 from datetime import datetime
 
-# -- Tunable scoring knobs ----------------------------------------------------
-# READY_LIFT and PREP_BIAS are both 0.7 by coincidence; they are unrelated and
-# may drift apart, so they are named separately rather than sharing a literal.
+# -- Scoring knobs ------------------------------------------------------------
+READY_LIFT = 0.7   # how far urgency lifts an unready task toward its target (<1)
+PREP_BIAS = 0.7    # action bias on the prep branch (<1)
+SCORE_CAP = 1000   # backstop guard, above the formula's natural max
+TIE_BAND = 0.10    # value-closeness band (log-bucketed for transitivity)
 
-# How far urgency may close the gap between a task's readiness and the
-# urgency-driven target R_floor. Strictly < 1 so a fully unready task is never
-# lifted all the way to "ready".
-READY_LIFT = 0.7
-
-# Action bias on the prep branch: < 1 so a tie in raw value tilts to "do".
-PREP_BIAS = 0.7
-
-# Upper guard on the two score branches. Sits above the formula's natural
-# maximum on purpose, so it never clips a real task — only a backstop.
-SCORE_CAP = 1000
-
-# Closeness band for the value tier, realized as a transitive log-bucket.
-TIE_BAND = 0.10
-
-# Quick-win lens thresholds (a short, ready-to-start task for a spare moment).
+# Quick-win lens: a short, ready-to-start task for a spare moment.
 QUICK_WIN_MAX_EFFORT_HOURS = 0.25  # 15 minutes
 QUICK_WIN_MIN_READINESS = 7
 
@@ -65,8 +32,7 @@ def clamp(x: float, lo: float, hi: float) -> float:
 
 
 def finite(x, fallback: float) -> float:
-    """Coerce anything non-numeric or non-finite to a known default before it
-    enters the formula — one bad field must yield a sane number, never NaN."""
+    """Coerce non-numeric / non-finite input to a default before the formula."""
     try:
         xf = float(x)
     except (TypeError, ValueError):
@@ -75,8 +41,7 @@ def finite(x, fallback: float) -> float:
 
 
 def readiness_of(t: dict) -> float:
-    """Default readiness is 8 (a task is presumed mostly-ready)."""
-    return finite(t.get("readiness"), 8)
+    return finite(t.get("readiness"), 8)  # default: presumed mostly-ready
 
 
 # -- Urgency curves -----------------------------------------------------------
@@ -128,8 +93,6 @@ def score_components(t: dict) -> dict:
     QW = 1 + 0.6 * (I / 10) * math.exp(-E / 1.5)
     risk_on = bool(t.get("execute_anyway"))
     R_floor = clamp((U - 6) / 4 * 10, 0, 10)
-    # Partial lift toward R_floor (not max(R, R_floor)): urgency pulls an unready
-    # task up so it still competes, but readiness keeps moving the score.
     R_eff = max(R, 9) if risk_on else R + max(0, R_floor - R) * READY_LIFT
     do_score = clamp((I * U * R_eff * QW) / 10, 0.1, SCORE_CAP)
     prep_score = 0.0 if risk_on else clamp((I * U * (10 - R)) / 10 * PREP_BIAS * QW, 0, SCORE_CAP)
@@ -173,8 +136,7 @@ def mine_to_do(task: dict, current_user_id=None) -> bool:
 # -- Dates --------------------------------------------------------------------
 
 def normalize_iso(due_date):
-    """A bare date ('YYYY-MM-DD') names a day; treat it as 5pm local so a
-    date-only deadline isn't read as midnight. A full datetime passes through."""
+    """A bare date ('YYYY-MM-DD') is treated as 5pm local; a datetime passes through."""
     if not isinstance(due_date, str):
         return due_date
     return f"{due_date}T17:00:00" if len(due_date) == 10 else due_date
@@ -198,8 +160,7 @@ def days_to_due_raw(due_date, now: datetime | None = None) -> float:
 
 
 def deadline_status(task: dict, now: datetime | None = None):
-    """Deadline pressure as a discrete tier, orthogonal to the priority score.
-    Returns 'overdue' | 'today' | 'tomorrow' | None."""
+    """Discrete deadline tier: 'overdue' | 'today' | 'tomorrow' | None."""
     if not task or task.get("completed") or not task.get("due_date"):
         return None
     due = _parse(task["due_date"])
@@ -220,16 +181,12 @@ def deadline_status(task: dict, now: datetime | None = None):
 # -- Ranking ------------------------------------------------------------------
 
 def deadline_risk_map(sorted_active: list, now: datetime | None = None, current_user_id=None) -> dict:
-    """Cumulative deadline-risk tiers across the ranked active queue.
-
-    Walk the queue in priority order, accumulate effort, and project a
-    continuous wall-clock finish for each task. A task whose projected finish
-    lands past its own deadline is at risk even if it would have fit alone — the
-    work ahead of it ate the runway. Returns {id: 'at-risk' | 'tight'}.
-    """
+    """Walk the queue in priority order, accumulate effort, and flag any task
+    whose projected wall-clock finish lands past its deadline. Returns
+    {id: 'at-risk' | 'tight'}."""
     out = {}
     now = now or datetime.now()
-    acc = 0.0  # cumulative effort-hours of the queue so far, inclusive
+    acc = 0.0  # cumulative effort-hours so far, inclusive
     for t in sorted_active:
         if not t or t.get("completed"):
             continue
@@ -244,7 +201,7 @@ def deadline_risk_map(sorted_active: list, now: datetime | None = None, current_
             continue
         hours_to_due = (due - now).total_seconds() / 3600
         if not (hours_to_due > 0):
-            continue  # overdue — skip; deadline_status owns that signal
+            continue  # overdue — deadline_status owns that signal
         slack = hours_to_due - acc
         if slack <= 0:
             out[t["id"]] = "at-risk"
@@ -254,10 +211,9 @@ def deadline_risk_map(sorted_active: list, now: datetime | None = None, current_
 
 
 def rank_active(tasks: list, now: datetime | None = None, current_user_id=None) -> list:
-    """Rank the active queue with deadlines as a constraint, not a term folded
-    into the value score. Three tiers: 0 overdue (EDF), 1 binding/at-risk (EDF,
-    lifted above the value pack), 2 value pack (value bucket, sooner due breaks
-    near-ties)."""
+    """Rank with deadlines as a constraint, not a blended term. Three tiers:
+    0 overdue (EDF), 1 binding/at-risk (EDF, lifted above the value pack),
+    2 value pack (value bucket, then sooner due breaks near-ties)."""
     now = now or datetime.now()
     active = [t for t in tasks if not t.get("completed")]
     V = {t["id"]: priority(t) for t in active}
@@ -276,18 +232,16 @@ def rank_active(tasks: list, now: datetime | None = None, current_user_id=None) 
         tid = t["id"]
         tr = tier_of(t)
         if tr < 2:
-            return (tr, D[tid], 0.0)  # overdue/binding: earliest-deadline-first
-        # value pack: higher bucket first, then sooner due breaks near-ties
+            return (tr, D[tid], 0.0)  # earliest-deadline-first
         return (tr, -value_bucket(V[tid]), D[tid])
 
-    # Python's sort is stable, so equal keys keep by_value (value-desc) order.
+    # Stable sort: equal keys keep by_value (value-desc) order.
     return sorted(by_value, key=sort_key)
 
 
 # -- Quick-win lens -----------------------------------------------------------
 
 def is_quick_win(task: dict) -> bool:
-    """Short enough and ready enough to knock out in a spare moment?"""
     if not task or task.get("completed"):
         return False
     e = task.get("effort_hours")
@@ -297,8 +251,7 @@ def is_quick_win(task: dict) -> bool:
 
 
 def quick_wins(tasks: list) -> list:
-    """Quick wins ordered for the spare-moment view: shortest first, ties by
-    priority desc."""
+    """Quick wins, shortest first, ties by priority desc."""
     return sorted(
         (t for t in tasks if is_quick_win(t)),
         key=lambda t: (t["effort_hours"], -priority(t)),
