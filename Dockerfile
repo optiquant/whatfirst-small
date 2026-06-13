@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN git clone --depth 1 https://github.com/ggml-org/llama.cpp /opt/llama.cpp \
     && cmake -S /opt/llama.cpp -B /opt/llama.cpp/build \
         -DGGML_NATIVE=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF \
-    && cmake --build /opt/llama.cpp/build --config Release -j --target llama-server \
+    && cmake --build /opt/llama.cpp/build --config Release -j 2 --target llama-server \
     && rm -rf /opt/llama.cpp/.git
 
 # --- non-root user (Hugging Face Spaces convention) --------------------------
