@@ -63,6 +63,10 @@ def _chat(system: str, user_content, max_tokens: int) -> str:
         "top_p": 0.9,
         "stream": False,
         "response_format": {"type": "json_object"},
+        # Keep the (identical, ~400-token) system-prompt prefix in the server's
+        # KV cache between calls, so repeated requests — the image flow's two
+        # passes, per-task re-suggest, back-to-back demos — skip re-processing it.
+        "cache_prompt": True,
     }
     r = requests.post(CHAT_URL, json=payload, timeout=REQUEST_TIMEOUT)
     r.raise_for_status()
