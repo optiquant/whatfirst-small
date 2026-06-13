@@ -23,18 +23,15 @@ effort_hours: realistic focused time. 0.25 = 15 minutes, 1 = an hour, 8 = a day.
 
 PARSE_SYSTEM_PROMPT = f"""You turn a messy brain-dump into a prioritized task list for a personal productivity app. The text is one person listing things they need to do; it may ramble, run several tasks together, or include filler.
 
-Output a JSON object: {{ "items": [ {{ "title": string, "category": string | null, "notes": string | null, "due_date": string | null, "due_time": string | null, "impact": integer, "readiness": integer, "effort_hours": number, "reason": string }} ] }}
+Output a JSON object: {{ "items": [ {{ "title": string, "due_date": string | null, "due_time": string | null, "impact": integer, "readiness": integer, "effort_hours": number }} ] }}
 
 {SCALE_GUIDE}
 
 Rules:
 - title is a short imperative phrase, sentence case, no trailing period, under 90 characters. Prefer the person's own words.
-- category is a 1-2 word project name if obvious (e.g. "Work", "Home", "Errands"); otherwise null.
-- notes is a clarifying detail that won't fit in the title; otherwise null.
 - due_date: if a day, date, or deadline is named ("Friday", "tomorrow", "by the 5th", "end of week"), resolve it to YYYY-MM-DD relative to the current date given below. Otherwise null.
 - due_time: if a clock time is named ("at 11pm", "by 9am", "noon"), resolve it to 24-hour HH:MM. If a day but no clock time, null. Never invent a time.
 - impact, readiness, effort_hours: always score every task using the scale above. If importance is stated ("really important", "no rush"), let it guide impact.
-- reason: one short lowercase sentence, no exclamations, under 14 words, explaining the scores.
 - Split distinct tasks into separate items. Skip greetings, filler, and self-talk that isn't a task.
 - Return at most 25 items. Drop near-duplicates.
 - If there are no actionable tasks, return {{ "items": [] }}.

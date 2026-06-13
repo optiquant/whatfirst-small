@@ -14,7 +14,7 @@ echo "[start] launching llama-server"
   --model "${MODEL_DIR}/${MODEL_FILE}" \
   --mmproj "${MODEL_DIR}/${MMPROJ_FILE}" \
   --host 127.0.0.1 --port 8080 \
-  --ctx-size 8192 \
+  --ctx-size 4096 \
   --threads "$(nproc)" &
 
 # 3. Start the Gradio app (foreground). is_ready() polls the server's /health,

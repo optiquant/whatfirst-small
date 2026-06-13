@@ -22,10 +22,6 @@ PREP_BIAS = 0.7    # action bias on the prep branch (<1)
 SCORE_CAP = 1000   # backstop guard, above the formula's natural max
 TIE_BAND = 0.10    # value-closeness band (log-bucketed for transitivity)
 
-# Quick-win lens: a short, ready-to-start task for a spare moment.
-QUICK_WIN_MAX_EFFORT_HOURS = 0.25  # 15 minutes
-QUICK_WIN_MIN_READINESS = 7
-
 
 def clamp(x: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, x))
@@ -64,13 +60,6 @@ def comp_urgency(d: float, e_hours: float) -> float:
     T, k, eps = 1, 4, 0.1
     accel = max(0, k / (slack + eps) - k / (T + eps)) if slack < T else 0
     return min(30, base + accel)
-
-
-def urgency(due_date, effort_hours) -> float:
-    if not due_date:
-        return 2
-    d = days_to_due_raw(due_date)
-    return max(cal_urgency(d), comp_urgency(d, effort_hours or 0.05))
 
 
 # -- Core score ---------------------------------------------------------------
@@ -113,24 +102,6 @@ def priority(t: dict) -> float:
 
 def value_bucket(v: float) -> int:
     return math.floor(math.log(max(v, 0.1)) / math.log(1 + TIE_BAND))
-
-
-# -- Assignment (collapses to "always mine" with no teams) --------------------
-
-def assignee_ids(task: dict) -> list:
-    ids = task.get("assignee_user_ids")
-    if isinstance(ids, list):
-        return ids
-    if task.get("assignee_user_id") is not None:
-        return [task["assignee_user_id"]]
-    return []
-
-
-def mine_to_do(task: dict, current_user_id=None) -> bool:
-    if current_user_id is None:
-        return True
-    ids = assignee_ids(task)
-    return len(ids) == 0 or current_user_id in ids
 
 
 # -- Dates --------------------------------------------------------------------
@@ -180,7 +151,7 @@ def deadline_status(task: dict, now: datetime | None = None):
 
 # -- Ranking ------------------------------------------------------------------
 
-def deadline_risk_map(sorted_active: list, now: datetime | None = None, current_user_id=None) -> dict:
+def deadline_risk_map(sorted_active: list, now: datetime | None = None) -> dict:
     """Walk the queue in priority order, accumulate effort, and flag any task
     whose projected wall-clock finish lands past its deadline. Returns
     {id: 'at-risk' | 'tight'}."""
@@ -189,8 +160,6 @@ def deadline_risk_map(sorted_active: list, now: datetime | None = None, current_
     acc = 0.0  # cumulative effort-hours so far, inclusive
     for t in sorted_active:
         if not t or t.get("completed"):
-            continue
-        if not mine_to_do(t, current_user_id):
             continue
         E = max(t.get("effort_hours") or 0, 0)
         acc += E
@@ -210,7 +179,7 @@ def deadline_risk_map(sorted_active: list, now: datetime | None = None, current_
     return out
 
 
-def rank_active(tasks: list, now: datetime | None = None, current_user_id=None) -> list:
+def rank_active(tasks: list, now: datetime | None = None) -> list:
     """Rank with deadlines as a constraint, not a blended term. Three tiers:
     0 overdue (EDF), 1 binding/at-risk (EDF, lifted above the value pack),
     2 value pack (value bucket, then sooner due breaks near-ties)."""
@@ -219,11 +188,9 @@ def rank_active(tasks: list, now: datetime | None = None, current_user_id=None) 
     V = {t["id"]: priority(t) for t in active}
     D = {t["id"]: days_to_due_raw(t.get("due_date"), now) for t in active}
     by_value = sorted(active, key=lambda t: V[t["id"]], reverse=True)
-    risk = deadline_risk_map(by_value, now, current_user_id)
+    risk = deadline_risk_map(by_value, now)
 
     def tier_of(t):
-        if not mine_to_do(t, current_user_id):
-            return 2
         if t.get("due_date") and D[t["id"]] <= 0:
             return 0
         return 1 if risk.get(t["id"]) == "at-risk" else 2
@@ -239,30 +206,38 @@ def rank_active(tasks: list, now: datetime | None = None, current_user_id=None) 
     return sorted(by_value, key=sort_key)
 
 
-# -- Quick-win lens -----------------------------------------------------------
-
-def is_quick_win(task: dict) -> bool:
-    if not task or task.get("completed"):
-        return False
-    e = task.get("effort_hours")
-    if not isinstance(e, (int, float)) or not math.isfinite(e) or e <= 0 or e > QUICK_WIN_MAX_EFFORT_HOURS:
-        return False
-    return readiness_of(task) >= QUICK_WIN_MIN_READINESS or bool(task.get("execute_anyway"))
-
-
-def quick_wins(tasks: list) -> list:
-    """Quick wins, shortest first, ties by priority desc."""
-    return sorted(
-        (t for t in tasks if is_quick_win(t)),
-        key=lambda t: (t["effort_hours"], -priority(t)),
-    )
-
-
 # -- Display helpers ----------------------------------------------------------
 
 def format_score(n: float) -> str:
     rounded = round(n * 10) / 10
     return str(int(rounded)) if rounded == int(rounded) else f"{rounded:.1f}"
+
+
+def explain(t: dict, now: datetime | None = None) -> str:
+    """A short, deterministic 'why it ranks here' phrase, read off the same
+    components that drive the score. This replaces a model-written reason: it
+    costs the model no tokens to produce and can never drift from the math the
+    way an LLM sentence can."""
+    now = now or datetime.now()
+    c = score_components(t)
+    I, R, E = c["I"], c["R"], c["E"]
+    status = deadline_status(t, now)
+    if status == "overdue":
+        return "overdue — start now"
+    if c["prep_wins"]:
+        return ("high-value but not ready — de-risk first" if I >= 5
+                else "not ready — needs a first step")
+    if status in ("today", "tomorrow"):
+        return f"due {status} — time-sensitive"
+    if E <= 1 and R >= 7:
+        return "quick win — short and ready"
+    if R <= 3:
+        return "blocked — next step unclear"
+    if I >= 8:
+        return "high-impact work"
+    if I <= 3:
+        return "minor — low impact"
+    return "steady priority"
 
 
 def due_label(due_date, now: datetime | None = None) -> str:

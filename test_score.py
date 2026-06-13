@@ -123,19 +123,6 @@ def test_completed_tasks_excluded():
     assert order == ["live"]
 
 
-# -- Quick wins ---------------------------------------------------------------
-
-def test_quick_win_filter_and_order():
-    tasks = [
-        {"id": "a", "impact": 5, "readiness": 9, "effort_hours": 0.1},   # qualifies
-        {"id": "b", "impact": 9, "readiness": 9, "effort_hours": 0.05},  # qualifies, shorter
-        {"id": "c", "impact": 5, "readiness": 3, "effort_hours": 0.1},   # too unready
-        {"id": "d", "impact": 5, "readiness": 9, "effort_hours": 2},     # too long
-    ]
-    order = [t["id"] for t in s.quick_wins(tasks)]
-    assert order == ["b", "a"], order  # shortest first
-
-
 def test_due_label():
     assert s.due_label("2026-06-08T12:00:00", NOW) == "tomorrow"
     assert s.due_label("2026-06-12T12:00:00", NOW) == "5d"
