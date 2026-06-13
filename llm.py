@@ -42,13 +42,19 @@ def is_ready() -> bool:
 
 
 def _chat(system: str, user_content, max_tokens: int) -> str:
-    """One chat completion with a JSON prefill. `user_content` is a string or an
-    OpenAI content-parts list (for images). Returns the raw assistant text with
-    the prefilled '{' restored."""
+    """One chat completion that is constrained to return a single JSON object.
+    `user_content` is a string or an OpenAI content-parts list (for images).
+
+    Note on JSON coercion: the cloud app (what-first.com) prefills the assistant
+    turn with '{' and lets Claude continue it. llama.cpp's chat endpoint does NOT
+    continue a trailing assistant turn — it generates a fresh, complete object —
+    so that prefill produced a doubled leading brace and every parse failed.
+    Instead we use llama.cpp's `response_format: json_object`, which applies a
+    grammar at sampling time: the model literally cannot emit prose, markdown
+    fences, or an unbalanced object."""
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": user_content},
-        {"role": "assistant", "content": "{"},  # prefill: coerce a JSON object
     ]
     payload = {
         "messages": messages,
@@ -56,23 +62,17 @@ def _chat(system: str, user_content, max_tokens: int) -> str:
         "temperature": 0.2,
         "top_p": 0.9,
         "stream": False,
+        "response_format": {"type": "json_object"},
     }
     r = requests.post(CHAT_URL, json=payload, timeout=REQUEST_TIMEOUT)
     r.raise_for_status()
-    text = r.json()["choices"][0]["message"]["content"]
-    return "{" + text
+    return r.json()["choices"][0]["message"]["content"]
 
 
-def _extract_json(text: str) -> dict:
-    """Tolerantly pull the first balanced JSON object out of a model response,
-    ignoring markdown fences and any trailing prose."""
-    text = text.strip()
-    if text.startswith("```"):
-        text = text.split("```", 2)[1] if "```" in text[3:] else text
-        text = text.lstrip("json").lstrip()
-    start = text.find("{")
-    if start == -1:
-        return {}
+def _read_balanced(text: str, start: int) -> tuple[str | None, int]:
+    """Read one string-aware balanced {...} starting at text[start] == '{'.
+    Returns (substring, end_index_exclusive), or (None, len) if it never closes
+    (the object was truncated, e.g. the model hit max_tokens mid-write)."""
     depth, in_str, esc = 0, False, False
     for i in range(start, len(text)):
         ch = text[i]
@@ -91,11 +91,61 @@ def _extract_json(text: str) -> dict:
         elif ch == "}":
             depth -= 1
             if depth == 0:
-                try:
-                    return json.loads(text[start:i + 1])
-                except json.JSONDecodeError:
-                    return {}
-    return {}
+                return text[start:i + 1], i + 1
+    return None, len(text)
+
+
+def _recover_items(text: str) -> list:
+    """Salvage every complete object inside an `"items": [ ... ]` array when the
+    whole response can't be parsed (truncated final item, stray trailing token).
+    A single cut-off task shouldn't void an otherwise-good batch."""
+    key = text.find('"items"')
+    if key == -1:
+        return []
+    i = text.find("[", key)
+    if i == -1:
+        return []
+    items: list = []
+    n = len(text)
+    while i < n:
+        if text[i] == "]":
+            break
+        if text[i] == "{":
+            obj, end = _read_balanced(text, i)
+            if obj is None:
+                break  # truncated final object — stop, keep what we have
+            try:
+                items.append(json.loads(obj))
+            except json.JSONDecodeError:
+                pass
+            i = end
+        else:
+            i += 1
+    return items
+
+
+def _extract_json(text: str) -> dict:
+    """Parse the model's JSON object. Output is grammar-constrained to a clean
+    object, so the fast path almost always wins; the fallbacks only matter if a
+    response is truncated at max_tokens."""
+    text = text.strip()
+    try:
+        obj = json.loads(text)
+        return obj if isinstance(obj, dict) else {}
+    except json.JSONDecodeError:
+        pass
+    start = text.find("{")
+    if start != -1:
+        obj_str, _ = _read_balanced(text, start)
+        if obj_str is not None:
+            try:
+                parsed = json.loads(obj_str)
+                if isinstance(parsed, dict):
+                    return parsed
+            except json.JSONDecodeError:
+                pass
+    # Truncated mid-array: recover whatever complete items survived.
+    return {"items": _recover_items(text)}
 
 
 # -- validation ---------------------------------------------------------------
