@@ -232,7 +232,21 @@ def extract_from_image(image) -> list[dict]:
     return parse_braindump(dump)
 
 
+# Cap the longest image edge before sending to the vision encoder. Qwen2.5-VL
+# uses dynamic resolution, so a full-size screenshot becomes thousands of vision
+# tokens — murder on a CPU-only box. ~1280px keeps a task list readable while
+# cutting vision tokens (and prefill time) several-fold. Tunable via env.
+MAX_IMAGE_EDGE = int(os.environ.get("MAX_IMAGE_EDGE", "1280"))
+
+
 def _png_b64(image) -> str:
+    image = image.convert("RGB")
+    longest = max(image.size)
+    if longest > MAX_IMAGE_EDGE:
+        scale = MAX_IMAGE_EDGE / longest
+        new_size = (round(image.width * scale), round(image.height * scale))
+        from PIL import Image  # local import: only the image flow needs it
+        image = image.resize(new_size, Image.LANCZOS)
     buf = io.BytesIO()
-    image.convert("RGB").save(buf, format="PNG")
+    image.save(buf, format="PNG")
     return base64.b64encode(buf.getvalue()).decode("ascii")
