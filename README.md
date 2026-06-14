@@ -7,6 +7,8 @@ sdk: docker
 app_port: 7860
 pinned: false
 license: apache-2.0
+models:
+  - ggml-org/Qwen2.5-VL-3B-Instruct-GGUF
 tags:
   - track:backyard
   - achievement:offgrid
@@ -18,7 +20,9 @@ tags:
 
 **Dump everything on your mind — get back what to do *first*, with the math shown.**
 
-[**▶ Live demo**](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small) &nbsp;·&nbsp; [📣 Launch post](https://x.com/tbd_ntbd/status/2066222870657692128) &nbsp;·&nbsp; [what-first.com](https://what-first.com) &nbsp;·&nbsp; Apache-2.0 &nbsp;·&nbsp; Runs 100% offline
+[**▶ Live demo**](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small) &nbsp;·&nbsp; [📣 Launch post](https://x.com/tbd_ntbd/status/2066222870657692128) &nbsp;·&nbsp; [what-first.com](https://what-first.com) &nbsp;·&nbsp; Apache-2.0
+
+🤏 **3B params** (≤ 4B) &nbsp;·&nbsp; 🔌 **runs 100% offline** — no internet required &nbsp;·&nbsp; 🦙 llama.cpp
 
 A small **local** vision-language model (Qwen2.5-VL-3B, ~2 GB, running on
 llama.cpp) reads a messy brain-dump or a photo of a to-do list and turns each
