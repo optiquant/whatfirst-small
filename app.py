@@ -42,6 +42,9 @@ DF_DATATYPES = ["number", "str", "str", "str", "str", "str", "number", "number",
 # site and the demo video (demo/compose.py) share.
 INDIGO, BLUE = "#4F46E5", "#2563EB"
 SLATE, INK, MUTED = "#1E293B", "#111827", "#5A6473"
+# Gold is the site's accent (demo/compose.py); GOLD_LT reads brighter on the
+# dark hero gradient, where the darker brand gold would muddy.
+GOLD, GOLD_LT = "#D97706", "#FBBF24"
 
 THEME = gr.themes.Soft(
     primary_hue=gr.themes.colors.indigo,
@@ -57,12 +60,17 @@ THEME = gr.themes.Soft(
 
 CSS = f"""
 #wf-hero {{
-  background: linear-gradient(120deg, {INDIGO}, {BLUE});
-  color: #fff; border-radius: 16px; padding: 26px 30px; margin-bottom: 8px;
+  background: linear-gradient(120deg, {INK}, {INDIGO} 55%, {BLUE});
+  border-radius: 16px; padding: 26px 30px; margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }}
+/* Gradio's prose styles set explicit heading/text colors, so force white here. */
+#wf-hero, #wf-hero h1, #wf-hero p, #wf-hero em {{ color: #fff !important; }}
 #wf-hero h1 {{ margin: 0 0 6px; font-weight: 700; letter-spacing: -0.5px; }}
-#wf-hero p {{ margin: 0; opacity: 0.92; font-size: 1.02em; line-height: 1.5; }}
-#wf-hero a {{ color: #fff; text-decoration: underline; }}
+#wf-hero h1 .wf-accent {{ color: {GOLD_LT} !important; }}
+#wf-hero p {{ margin: 0; opacity: 0.95; font-size: 1.02em; line-height: 1.5; }}
+#wf-hero strong {{ color: {GOLD_LT} !important; font-weight: 700; }}
+#wf-hero a {{ color: {GOLD_LT} !important; text-decoration: underline; text-underline-offset: 2px; }}
 #wf-first {{ color: {SLATE}; font-weight: 600; }}
 """
 
@@ -110,8 +118,8 @@ def prioritize(text, image, tasks):
     hint = ""
     if text and text.strip():
         n = len([ln for ln in text.splitlines() if ln.strip()])
-        hint = f" ~{n} item{'s' if n != 1 else ''}"
-    yield tasks, f"### ⏳ Reading and scoring{hint} on the local model… (~60s on free CPU)", [], gr.update()
+        hint = f" ≈{n} item{'s' if n != 1 else ''}"
+    yield tasks, f"### ⏳ Reading and scoring{hint} on the local model… (≈60s on free CPU)", [], gr.update()
     collected = []
     if text and text.strip():
         collected += llm.parse_braindump(text)
@@ -165,7 +173,7 @@ def _find(sel, tasks):
 with gr.Blocks(title="whatfirst-small", theme=THEME, css=CSS) as demo:
     gr.HTML(
         "<div id='wf-hero'>"
-        "<h1>whatfirst · small</h1>"
+        "<h1>whatfirst · <span class='wf-accent'>small</span></h1>"
         "<p>Dump everything on your mind — or snap a photo of your to-do list — and a "
         "<strong>small local model</strong> turns it into structured tasks. A "
         "<strong>transparent scoring engine</strong> then tells you what to do <em>first</em>, "
