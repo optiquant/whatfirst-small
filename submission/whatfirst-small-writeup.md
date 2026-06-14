@@ -64,7 +64,7 @@ The model's job ends at structured fields. The ranking is deterministic, and **e
 - **do** = `(Impact · Urgency · Readiness_eff · QuickWin) / 10` — the case for doing it now.
 - **prep** = `(Impact · Urgency · (10 − Readiness)) / 10 · 0.7 · QuickWin` — the case for de-risking it first (wins only when a task is valuable but not ready).
 
-**Urgency** climbs as a deadline nears and _explodes_ once it's within a day, so a looming deadline can't be buried by a shiny far-off task. **QuickWin** rewards short, ready tasks. And deadlines act as a **constraint**, not just a term: anything overdue, or that genuinely won't finish in time given everything ahead of it, is lifted above the value pack.
+**Urgency** climbs as a deadline nears and _explodes_ once it's within a day, so a looming deadline can't be buried by a shiny far-off task. **QuickWin** rewards short, high-impact tasks. And deadlines act as a **constraint**, not just a term: anything overdue, or that genuinely won't finish in time given everything ahead of it, is lifted above the value pack.
 
 Disagree with a score? Drag a slider and the list **re-ranks live** — the model proposes, you decide.
 

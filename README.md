@@ -34,14 +34,17 @@ keys, runs on a laptop.
 Built for the [Hugging Face Build Small hackathon](https://huggingface.co/build-small-hackathon)
 (Backyard AI track).
 
+📓 **Field notes:** [an honest write-up of what worked and what didn't](submission/whatfirst-small-writeup.md) —
+the small-model story, including where a 3B model wobbles and how the design absorbs it.
+
 ## Demo
 
 [![Watch the whatfirst-small demo](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small/resolve/main/demo/out/whatfirst-small-demo-poster.jpg)](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small/resolve/main/demo/out/whatfirst-small-demo-loud.mp4)
 
 ▶ **[Watch the demo video](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small/resolve/main/demo/out/whatfirst-small-demo-loud.mp4)** &nbsp;·&nbsp; **[Try the live Space](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small)**
 
-<!-- The block above renders as a clickable poster on GitHub (which strips <video>) and on Hugging Face.
-     The Space's own front-matter video is preserved by the `---` header at the top of this file. -->
+<!-- Rendered as a clickable poster + links so the demo works on GitHub (which strips raw <video>)
+     and on Hugging Face alike. -->
 
 
 ## Why this exists
@@ -50,7 +53,7 @@ Deciding *what to do first* is a real, daily problem — and most "AI to-do" app
 answer it with a black box. This one keeps the AI where it earns its keep (turning
 vague human language into structured fields) and makes the prioritization itself
 **legible**: two competing scores (do-it-now vs. de-risk-first), an urgency curve
-that explodes as a deadline nears, a quick-win boost for short ready tasks, and
+that explodes as a deadline nears, a quick-win boost for short, high-impact tasks, and
 deadlines treated as a hard constraint rather than a number folded into a blob.
 
 The problem — and the prioritization approach — come from
@@ -83,7 +86,7 @@ brain-dump / photo  ──▶  Qwen2.5-VL-3B (llama.cpp, localhost)  ──▶  
 
 ```bash
 docker build -t whatfirst-small .
-docker run -p 7860:7860 whatfirst-small   # first boot downloads ~2.3 GB of weights
+docker run -p 7860:7860 whatfirst-small   # first boot downloads ~3.3 GB (model + vision projector)
 ```
 
 Then open http://localhost:7860. On a CPU-only box, expect a few seconds per task

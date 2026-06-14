@@ -7,9 +7,10 @@ prompts), reshaped for a single small model running locally:
   - EXTRACT : a photo of a list     -> task items (titles only; scored after)
   - SCORE   : one task              -> impact / readiness / effort (slider re-suggest)
 
-Every call uses the JSON-prefill trick (prefill the assistant turn with "{") so
-a small model continues the object instead of wrapping it in prose. All model
-output is untrusted and re-clamped in llm.py before it reaches the scorer.
+Every call is constrained to emit a single JSON object via llama.cpp's
+`response_format: json_object` grammar (see llm.py) — the model cannot wrap it in
+prose or markdown fences. All model output is still untrusted and re-clamped in
+llm.py before it reaches the scorer.
 """
 
 # Shared definitions of the three scoring axes, kept identical across prompts so
