@@ -23,6 +23,15 @@ keys, runs on a laptop.
 Built for the [Hugging Face Build Small hackathon](https://huggingface.co/build-small-hackathon)
 (Backyard AI track).
 
+## Demo
+
+<video
+  controls
+  width="100%"
+  poster="https://huggingface.co/spaces/build-small-hackathon/whatfirst-small/resolve/main/demo/out/whatfirst-small-demo-poster.jpg"
+  src="https://huggingface.co/spaces/build-small-hackathon/whatfirst-small/resolve/main/demo/out/whatfirst-small-demo-loud.mp4">
+</video>
+
 ## Why this exists
 
 Deciding *what to do first* is a real, daily problem — and most "AI to-do" apps
