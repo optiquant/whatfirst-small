@@ -14,6 +14,7 @@ tags:
 - achievement:offgrid
 - achievement:llama
 - achievement:fieldnotes
+- achievement:tiny-titan
 thumbnail: >-
   https://cdn-uploads.huggingface.co/production/uploads/67a39e9465c06c95d452bd6d/Z_pvYNAWsx5oR24zkUFZg.png
 ---
