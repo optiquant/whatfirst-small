@@ -79,6 +79,8 @@ Disagree with a score? Drag a slider and the list **re-ranks live** — the mode
 
 ## Merit badges
 
+**🤏 Tiny Titan.** The entire app — brain-dump parsing, image reading, and live re-scoring — runs on a single 3B model (Qwen2.5-VL-3B), comfortably under the 4B line, on CPU.
+
 **🔌 Off the Grid.** All inference is local llama.cpp over localhost. Nothing leaves the box at runtime — no cloud, no API keys. Your to-do list, including a photo of it, never travels.
 
 **🦙 Llama Champion.** The whole language stack is a llama.cpp `llama-server`, built from source in the container, serving a Qwen2.5-VL GGUF (text **and** vision) behind an OpenAI-compatible API.

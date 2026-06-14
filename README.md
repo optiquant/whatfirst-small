@@ -20,9 +20,11 @@ tags:
 
 **Dump everything on your mind — get back what to do *first*, with the math shown.**
 
-[**▶ Live demo**](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small) &nbsp;·&nbsp; [📣 Launch post](https://x.com/tbd_ntbd/status/2066222870657692128) &nbsp;·&nbsp; [what-first.com](https://what-first.com) &nbsp;·&nbsp; Apache-2.0
+### [▶ Try the live demo](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small)
 
-🤏 **3B params** (≤ 4B) &nbsp;·&nbsp; 🔌 **runs 100% offline** — no internet required &nbsp;·&nbsp; 🦙 llama.cpp
+🤏 **3B params** (≤ 4B — *Tiny Titan*) &nbsp;·&nbsp; 🔌 **runs 100% offline** — no internet required &nbsp;·&nbsp; 🦙 llama.cpp
+
+[📣 Launch post](https://x.com/tbd_ntbd/status/2066222870657692128) &nbsp;·&nbsp; [what-first.com](https://what-first.com) &nbsp;·&nbsp; Apache-2.0
 
 A small **local** vision-language model (Qwen2.5-VL-3B, ~2 GB, running on
 llama.cpp) reads a messy brain-dump or a photo of a to-do list and turns each
@@ -104,3 +106,8 @@ python -m pytest test_score.py    # or: python test_score.py
   (Q4_K_M + f16 mmproj), ≤ 32B and laptop-runnable.
 - **Off the grid:** all inference is local llama.cpp over localhost; nothing
   leaves the box at runtime.
+
+---
+
+📓 **See the full story in our [field notes](submission/whatfirst-small-writeup.md)** —
+what worked, where a 3B model wobbles, and how the design absorbs it.
