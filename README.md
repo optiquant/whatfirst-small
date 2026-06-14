@@ -13,6 +13,8 @@ license: apache-2.0
 
 **Dump everything on your mind — get back what to do *first*, with the math shown.**
 
+[**▶ Live demo**](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small) &nbsp;·&nbsp; [what-first.com](https://what-first.com) &nbsp;·&nbsp; Apache-2.0 &nbsp;·&nbsp; Runs 100% offline
+
 A small **local** vision-language model (Qwen2.5-VL-3B, ~2 GB, running on
 llama.cpp) reads a messy brain-dump or a photo of a to-do list and turns each
 line into a structured task — impact, readiness, effort, deadline. A
@@ -25,12 +27,13 @@ Built for the [Hugging Face Build Small hackathon](https://huggingface.co/build-
 
 ## Demo
 
-<video
-  controls
-  width="100%"
-  poster="https://huggingface.co/spaces/build-small-hackathon/whatfirst-small/resolve/main/demo/out/whatfirst-small-demo-poster.jpg"
-  src="https://huggingface.co/spaces/build-small-hackathon/whatfirst-small/resolve/main/demo/out/whatfirst-small-demo-loud.mp4">
-</video>
+[![Watch the whatfirst-small demo](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small/resolve/main/demo/out/whatfirst-small-demo-poster.jpg)](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small/resolve/main/demo/out/whatfirst-small-demo-loud.mp4)
+
+▶ **[Watch the demo video](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small/resolve/main/demo/out/whatfirst-small-demo-loud.mp4)** &nbsp;·&nbsp; **[Try the live Space](https://huggingface.co/spaces/build-small-hackathon/whatfirst-small)**
+
+<!-- The block above renders as a clickable poster on GitHub (which strips <video>) and on Hugging Face.
+     The Space's own front-matter video is preserved by the `---` header at the top of this file. -->
+
 
 ## Why this exists
 
