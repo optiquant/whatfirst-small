@@ -26,7 +26,7 @@ tags:
 
 Deciding _what to do first_ is a real, daily problem — and most "AI to-do" apps answer it with a black box. You get a reordered list and no idea why. The whole category bet on opaque intelligence and lost the one axis that actually builds trust: _I understand why this is at the top._
 
-whatfirst keeps the AI where it earns its keep — turning vague human language into structured fields — and makes the **prioritization itself legible**: two competing scores, an urgency curve that explodes as a deadline nears, a quick-win boost for short ready tasks, and deadlines treated as a hard constraint rather than a number folded into a blob.
+whatfirst keeps the AI where it earns its keep — turning vague human language into structured fields — and makes the **prioritization itself legible**: two competing scores, an urgency curve that explodes as a deadline nears, a quick-win boost for short, high-impact tasks, and deadlines treated as a hard constraint rather than a number folded into a blob.
 
 ## The small question
 
@@ -48,9 +48,9 @@ brain-dump / photo  ──▶  Qwen2.5-VL-3B (llama.cpp, localhost)  ──▶  
                                                           ranked list + "do this first"
 ```
 
-- **`llm.py`** — client for the local llama.cpp server (brain-dump parse, image extract, single-task re-score). Every model output is treated as untrusted: parsed tolerantly, then **re-clamped to its domain** before it reaches the scorer.
+- **`llm.py`** — client for the local llama.cpp server (brain-dump parse, image extract, single-task re-score). Each call is grammar-constrained to a single JSON object (llama.cpp's `json_object` response format), and every model output is still treated as untrusted: parsed tolerantly, then **re-clamped to its domain** before it reaches the scorer.
 - **`score.py`** — the scoring + deadline-ranking engine. Pure standard-library math, fully deterministic.
-- **`prompts.py`** — the system prompts that pin the model to strict JSON.
+- **`prompts.py`** — the system prompts that ask for strict-JSON output and define the three scoring scales.
 - **`app.py`** — the Gradio UI: capture, ranked table, and sliders to correct any score and re-rank live.
 
 ## The model

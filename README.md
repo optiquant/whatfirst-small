@@ -77,8 +77,10 @@ brain-dump / photo  ──▶  Qwen2.5-VL-3B (llama.cpp, localhost)  ──▶  
 
 - `score.py` — the scoring + deadline-ranking engine (pure standard-library math).
 - `llm.py` — client for the local llama.cpp server (brain-dump parse, image
-  extract, single-task re-score). Every model output is re-clamped before scoring.
-- `prompts.py` — the system prompts that pin the model to strict JSON.
+  extract, single-task re-score). Each call is grammar-constrained to a JSON
+  object; every model output is re-clamped before scoring.
+- `prompts.py` — the system prompts that ask for strict-JSON output and define
+  the scoring scales.
 - `app.py` — the Gradio UI: capture, ranked table, and sliders to correct any
   score and re-rank live.
 
