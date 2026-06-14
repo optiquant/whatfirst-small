@@ -5,15 +5,17 @@ colorFrom: indigo
 colorTo: blue
 sdk: docker
 app_port: 7860
-pinned: false
+pinned: true
 license: apache-2.0
 models:
-  - ggml-org/Qwen2.5-VL-3B-Instruct-GGUF
+- ggml-org/Qwen2.5-VL-3B-Instruct-GGUF
 tags:
-  - track:backyard
-  - achievement:offgrid
-  - achievement:llama
-  - achievement:fieldnotes
+- track:backyard
+- achievement:offgrid
+- achievement:llama
+- achievement:fieldnotes
+thumbnail: >-
+  https://cdn-uploads.huggingface.co/production/uploads/67a39e9465c06c95d452bd6d/Z_pvYNAWsx5oR24zkUFZg.png
 ---
 
 # whatfirst · small
