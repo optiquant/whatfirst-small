@@ -19,6 +19,10 @@ thumbnail: >-
   https://cdn-uploads.huggingface.co/production/uploads/67a39e9465c06c95d452bd6d/Z_pvYNAWsx5oR24zkUFZg.png
 ---
 
+<p align="center">
+  <img src="assets/whatfirst-small-logo.svg" alt="whatfirst · small" width="420">
+</p>
+
 # whatfirst · small
 
 **Dump everything on your mind — get back what to do *first*, with the math shown.**
